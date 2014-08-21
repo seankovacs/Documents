@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -18,10 +19,16 @@ import android.widget.Toast;
 import android.util.Log;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 
 import com.soundcloud.android.crop.Crop;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -75,11 +82,12 @@ public class MainActivity extends Activity {
         switch (requestCode) {
             case REQUEST_TAKE_PHOTO:
                 if (resultCode == RESULT_OK) {
-                    // Image captured and saved to fileUri specified in the Intent
 
-                    Uri outputUri = Uri.fromFile(new File(mCurrentPhotoPath));
+                    // Convert on disk picture to grayscale
+                    convertPictureToGrayscale(mCurrentPhotoPath);
+
                     Uri source = Uri.fromFile(new File(mCurrentPhotoPath));
-                    new Crop(source).output(outputUri).asSquare().start(this);
+                    new Crop(source).output(source).asSquare().start(this);
                 }
                 break;
             case REQUEST_CROP_PHOTO:
@@ -186,5 +194,45 @@ public class MainActivity extends Activity {
         Log.d("Path",image.toString());
         mCurrentPhotoPath = image.getAbsolutePath();
         return image;
+    }
+
+
+    private void convertPictureToGrayscale(String path)
+    {
+        Bitmap original = BitmapFactory.decodeFile(path);
+        Bitmap grayoriginal = toGrayscale(original);
+
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(path);
+            grayoriginal.compress(Bitmap.CompressFormat.PNG, 100, out);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (out != null) {
+                    out.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public Bitmap toGrayscale(Bitmap bmpOriginal)
+    {
+        int width, height;
+        height = bmpOriginal.getHeight();
+        width = bmpOriginal.getWidth();
+
+        Bitmap bmpGrayscale = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+        Canvas c = new Canvas(bmpGrayscale);
+        Paint paint = new Paint();
+        ColorMatrix cm = new ColorMatrix();
+        cm.setSaturation(0);
+        ColorMatrixColorFilter f = new ColorMatrixColorFilter(cm);
+        paint.setColorFilter(f);
+        c.drawBitmap(bmpOriginal, 0, 0, paint);
+        return bmpGrayscale;
     }
 }
