@@ -27,8 +27,11 @@ public class ImageAdapter extends BaseAdapter {
         File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
         File appDir = new File(storageDir,"DocPics");
         File file[] = appDir.listFiles();
-
-        return file.length;
+        if(file != null) {
+            return file.length;
+        }else {
+            return 0;
+        }
     }
 
     public Object getItem(int position) {
